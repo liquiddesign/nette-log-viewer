@@ -25,4 +25,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debug mode access restriction
 - Directory boundary validation
 
-[1.0.0]: https://github.com/liquiddesign/log-viewer/releases/tag/v1.0.0
+[1.0.0]: https://github.com/liquiddesign/nette-log-viewer/releases/tag/v1.0.0
