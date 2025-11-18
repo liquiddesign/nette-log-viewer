@@ -304,6 +304,23 @@ class LogViewerPresenter extends Presenter
 		$this->sendResponse(new FileResponse($fullPath, \basename($fullPath)));
 	}
 
+	/**
+	 * Format template files - ensure templates are loaded from package directory
+	 * This is needed when presenter is extended in application namespace
+	 * @return array<string>
+	 */
+	public function formatTemplateFiles(): array
+	{
+		$name = $this->getName() ?? 'LogViewer';
+		$presenter = Strings::substring($name, (int) \strrpos(':' . $name, ':'));
+		$file = (new \ReflectionClass(self::class))->getFileName();
+		$dir = $file !== false ? \dirname($file) : __DIR__;
+
+		return [
+			"$dir/templates/$presenter.$this->view.latte",
+		];
+	}
+
 	protected function startup(): void
 	{
 		parent::startup();
