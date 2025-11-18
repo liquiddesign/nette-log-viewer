@@ -34,7 +34,31 @@ composer require liquiddesign/nette-log-viewer
 
 ### 1. Register Presenter in Router
 
-Add the log viewer route to your router configuration:
+#### Option A: Using NEON Configuration (Recommended)
+
+Add routes to your `config/pages.neon` or similar configuration file:
+
+```neon
+routing:
+	routes:
+		'log-viewer/view/<file .+>': LogViewer:LogViewer:view
+		'log-viewer/download/<file .+>': LogViewer:LogViewer:download
+		'log-viewer[/<path .+>]': LogViewer:LogViewer:default
+```
+
+If you extended the presenter in your app namespace (e.g., `App\Web\LogViewerPresenter`):
+
+```neon
+routing:
+	routes:
+		'log-viewer/view/<file .+>': Web:LogViewer:view
+		'log-viewer/download/<file .+>': Web:LogViewer:download
+		'log-viewer[/<path .+>]': Web:LogViewer:default
+```
+
+#### Option B: Using PHP Router
+
+Alternatively, add the route in your RouterFactory:
 
 ```php
 // app/Router/RouterFactory.php
@@ -76,9 +100,11 @@ parameters:
 
 ### Custom Log Directory
 
-By default, the log viewer uses `Tracy\Debugger::$logDirectory`. If you need a custom log directory:
+By default, the log viewer uses `Tracy\Debugger::$logDirectory`. If you need a custom log directory, extend the presenter and override the log directory in `startup()`:
 
 ```php
+namespace App\Web;
+
 use LogViewer\LogViewerPresenter as BaseLogViewerPresenter;
 
 class LogViewerPresenter extends BaseLogViewerPresenter
@@ -87,18 +113,26 @@ class LogViewerPresenter extends BaseLogViewerPresenter
 	{
 		parent::startup();
 
-		// Override log directory
+		// Option 1: Use hardcoded path
 		$this->logDir = '/custom/path/to/logs';
+
+		// Option 2: Use container parameters (recommended)
+		$this->logDir = $this->container->getParameters()['tempDir'] . '/log';
 	}
 }
 ```
 
+Then register your extended presenter in router configuration instead of the base one.
+
 ### Access Control
 
-The package automatically restricts access to debug mode only. For additional security:
+The package automatically restricts access to debug mode only. For additional security, you can extend the presenter and add custom access control:
 
 ```php
+namespace App\Web;
+
 use LogViewer\LogViewerPresenter as BaseLogViewerPresenter;
+use Nette\Application\ForbiddenRequestException;
 
 class LogViewerPresenter extends BaseLogViewerPresenter
 {
@@ -106,9 +140,9 @@ class LogViewerPresenter extends BaseLogViewerPresenter
 	{
 		parent::startup();
 
-		// Add custom access control
+		// Add custom access control (e.g., admin role required)
 		if (!$this->getUser()->isInRole('admin')) {
-			throw new Nette\Application\ForbiddenRequestException();
+			throw new ForbiddenRequestException();
 		}
 	}
 }
