@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<ruleset name="LogViewer">
+	<description>Liquid Design coding standard for log-viewer package</description>
+
+	<rule ref="vendor/liquiddesign/codestyle/src/ruleset.xml"/>
+
+	<rule ref="SlevomatCodingStandard.Files.TypeNameMatchesFileName">
+		<properties>
+			<property name="rootNamespaces" type="array">
+				<element key="src" value="LogViewer"/>
+			</property>
+		</properties>
+	</rule>
+
+	<file>src</file>
+</ruleset>

@@ -1,0 +1,48 @@
+{
+	"name": "liquiddesign/nette-log-viewer",
+	"description": "Ⓛ Nette log viewer - Developer tool for viewing Tracy logs",
+	"type": "library",
+	"license": "MIT",
+	"keywords": [
+		"nette",
+		"tracy",
+		"log",
+		"viewer",
+		"debug",
+		"development"
+	],
+	"authors": [
+		{
+			"name": "Liquid Design",
+			"homepage": "https://www.lqd.cz"
+		}
+	],
+	"require": {
+		"php": "^8.3 || ^8.4",
+		"nette/application": "^3.2",
+		"nette/utils": "^4.0",
+		"tracy/tracy": "^2.10"
+	},
+	"require-dev": {
+		"liquiddesign/codestyle": "^4.0",
+		"phpstan/phpstan": "^2.0",
+		"phpstan/phpstan-nette": "^2.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"LogViewer\\": "src/"
+		}
+	},
+	"scripts": {
+		"phpstan": "phpstan analyse --memory-limit 1G -c phpstan.neon",
+		"phpcs": "phpcs --standard=ruleset.xml src",
+		"phpcsfix": "phpcbf --standard=ruleset.xml src"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		}
+	},
+	"prefer-stable": true,
+	"minimum-stability": "stable"
+}

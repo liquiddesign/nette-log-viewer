@@ -1,0 +1,778 @@
+{varType string $fileName}
+{varType string $filePath}
+{varType string $content}
+{varType bool $isHtml}
+{varType int $fileSize}
+{varType int $lastModified}
+{varType int $totalSize}
+{varType int $currentPage}
+{varType int $totalPages}
+{varType int|null $chunkSize}
+{varType int $displayedSize}
+{varType string|null $searchQuery}
+{varType int|null $searchLineNumber}
+{varType bool|null $searchFound}
+{varType int|null $searchContext}
+{varType string|null $searchContextDirection}
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{$fileName} - Log Viewer</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" rel="stylesheet">
+	<style>
+		body {
+			background-color: #f8f9fa;
+		}
+		.container-fluid {
+			max-width: 100%;
+			padding: 20px;
+		}
+		.file-header {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: white;
+			padding: 20px;
+			border-radius: 8px 8px 0 0;
+			margin-bottom: 0;
+		}
+		.file-meta {
+			background: white;
+			padding: 15px 20px;
+			border-left: 3px solid #667eea;
+			border-right: 3px solid #667eea;
+			display: flex;
+			gap: 30px;
+			flex-wrap: wrap;
+		}
+		.file-meta-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+		.file-content {
+			background: white;
+			border: 3px solid #667eea;
+			border-top: none;
+			border-radius: 0 0 8px 8px;
+			overflow: hidden;
+		}
+		pre {
+			margin: 0;
+			padding: 20px;
+			background: #1e1e1e;
+			color: #d4d4d4;
+			max-height: calc(100vh - 300px);
+			overflow: auto;
+			font-size: 12px;
+			line-height: 1.6;
+			white-space: pre-wrap;
+			word-wrap: break-word;
+			overflow-wrap: break-word;
+		}
+		pre.log-content.nowrap {
+			white-space: pre;
+			overflow-x: auto;
+		}
+		pre.log-content code {
+			display: block;
+		}
+		.html-content {
+			padding: 0;
+			background: white;
+		}
+		.html-content iframe {
+			width: 100%;
+			min-height: calc(100vh - 300px);
+			border: none;
+		}
+		.btn-back {
+			background: rgba(255, 255, 255, 0.2);
+			border: 1px solid rgba(255, 255, 255, 0.3);
+			color: white;
+		}
+		.btn-back:hover {
+			background: rgba(255, 255, 255, 0.3);
+			color: white;
+		}
+		/* Syntax highlighting colors */
+		.highlight-timestamp {
+			color: #9cdcfe;
+			font-weight: 400;
+		}
+		.highlight-error {
+			color: #f48771;
+			font-weight: 500;
+		}
+		.highlight-warning {
+			color: #dcdcaa;
+			font-weight: 500;
+		}
+		.highlight-info {
+			color: #4fc1ff;
+			font-weight: 500;
+		}
+		.highlight-debug {
+			color: #b5cea8;
+			font-weight: 500;
+		}
+		.highlight-success {
+			color: #89d185;
+			font-weight: 500;
+		}
+		.highlight-url {
+			color: #ce9178;
+			text-decoration: underline;
+		}
+		.highlight-exception {
+			color: #f48771;
+			font-weight: 500;
+		}
+		.highlight-json-key {
+			color: #9cdcfe;
+		}
+		.highlight-number {
+			color: #b5cea8;
+		}
+		.highlight-string {
+			color: #ce9178;
+		}
+		.highlight-path {
+			color: #d7ba7d;
+		}
+		/* JSON viewer icon */
+		.json-viewer-icon {
+			display: inline-block;
+			margin-left: 8px;
+			color: #4fc1ff;
+			cursor: pointer;
+			font-size: 0.9em;
+			opacity: 0.7;
+			transition: opacity 0.2s;
+		}
+		.json-viewer-icon:hover {
+			opacity: 1;
+			color: #6db9ff;
+		}
+		/* JSON syntax highlighting in modal */
+		.json-key {
+			color: #9cdcfe;
+		}
+		.json-string {
+			color: #ce9178;
+		}
+		.json-number {
+			color: #b5cea8;
+		}
+		.json-boolean {
+			color: #569cd6;
+		}
+		.json-null {
+			color: #569cd6;
+		}
+		.wrap-toggle {
+			background: rgba(255, 255, 255, 0.2);
+			border: 1px solid rgba(255, 255, 255, 0.3);
+			color: white;
+			font-size: 0.875rem;
+		}
+		.wrap-toggle:hover {
+			background: rgba(255, 255, 255, 0.3);
+			color: white;
+		}
+		.wrap-toggle.active {
+			background: rgba(255, 255, 255, 0.4);
+			border-color: rgba(255, 255, 255, 0.5);
+		}
+		.search-form {
+			background: white;
+			padding: 15px 20px;
+			border-left: 3px solid #667eea;
+			border-right: 3px solid #667eea;
+		}
+		.search-form form {
+			margin: 0;
+		}
+		.alert {
+			padding: 12px 20px;
+			border-left: 3px solid #667eea;
+			border-right: 3px solid #667eea;
+			border-radius: 0;
+			margin-bottom: 0;
+		}
+		.highlight-match {
+			background-color: #ffeb3b;
+			font-weight: 600;
+			padding: 2px 0;
+		}
+	</style>
+</head>
+<body>
+	<div class="container-fluid">
+		{* Header *}
+		<div class="file-header">
+			<div class="d-flex justify-content-between align-items-center">
+				<div>
+					<h1 class="h3 mb-2">
+						{if $isHtml}
+							<i class="fas fa-file-code me-2"></i>
+						{else}
+							<i class="fas fa-file-alt me-2"></i>
+						{/if}
+						{$fileName}
+					</h1>
+					<p class="mb-0 opacity-75">
+						<i class="fas fa-folder me-1"></i>
+						{$filePath}
+					</p>
+				</div>
+				<div class="d-flex gap-2">
+					<a n:href="default, path => dirname($filePath) === '.' ? null : dirname($filePath)" class="btn btn-back">
+						<i class="fas fa-arrow-left me-1"></i>
+						Zpět na seznam
+					</a>
+					{if !$isHtml}
+						<button type="button" class="btn wrap-toggle active" id="wrapToggle" onclick="toggleWrap()">
+							<i class="fas fa-align-left me-1"></i>
+							Zalamovat řádky
+						</button>
+					{/if}
+					<a n:href="download, file => $filePath" class="btn btn-light">
+						<i class="fas fa-download me-1"></i>
+						Stáhnout
+					</a>
+				</div>
+			</div>
+		</div>
+
+		{* Search Form *}
+		{if !$isHtml}
+			<div class="search-form">
+				<form method="get" class="d-flex gap-2 align-items-center">
+					<input type="hidden" name="file" value="{$filePath}">
+					<div class="flex-grow-1">
+						<input type="text"
+							   name="search"
+							   class="form-control"
+							   placeholder="Hledat v souboru..."
+							   value="{$searchQuery}"
+							   autocomplete="off">
+					</div>
+					<div style="min-width: 150px;">
+						<select name="context" class="form-select">
+							<option value="3" {if ($searchContext ?? 5) === 3}selected{/if}>3 řádky</option>
+							<option value="5" {if ($searchContext ?? 5) === 5}selected{/if}>5 řádků</option>
+							<option value="10" {if ($searchContext ?? 5) === 10}selected{/if}>10 řádků</option>
+							<option value="20" {if ($searchContext ?? 5) === 20}selected{/if}>20 řádků</option>
+							<option value="50" {if ($searchContext ?? 5) === 50}selected{/if}>50 řádků</option>
+							<option value="100" {if ($searchContext ?? 5) === 100}selected{/if}>100 řádků</option>
+							<option value="200" {if ($searchContext ?? 5) === 200}selected{/if}>200 řádků</option>
+							<option value="300" {if ($searchContext ?? 5) === 300}selected{/if}>300 řádků</option>
+						</select>
+					</div>
+					<div style="min-width: 150px;">
+						<select name="contextDirection" class="form-select">
+							<option value="both" {if ($searchContextDirection ?? 'both') === 'both'}selected{/if}>Do obou směrů</option>
+							<option value="before" {if ($searchContextDirection ?? 'both') === 'before'}selected{/if}>Pouze před</option>
+							<option value="after" {if ($searchContextDirection ?? 'both') === 'after'}selected{/if}>Pouze za</option>
+						</select>
+					</div>
+					<button type="submit" class="btn btn-primary">
+						<i class="fas fa-search me-1"></i>
+						Hledat
+					</button>
+					{if $searchQuery !== null}
+						<a n:href="view, file => $filePath" class="btn btn-secondary">
+							<i class="fas fa-times me-1"></i>
+							Zrušit
+						</a>
+					{/if}
+				</form>
+			</div>
+		{/if}
+
+		{* Search Results Info *}
+		{if $searchQuery !== null && !$isHtml}
+			{if $searchFound === true}
+				<div class="alert alert-success mb-0">
+					<i class="fas fa-check-circle me-1"></i>
+					Nalezen text "<strong>{$searchQuery}</strong>" na řádku <strong>{$searchLineNumber}</strong>.
+					{var $direction = $searchContextDirection ?? 'both'}
+					{if $direction === 'both'}
+						Zobrazeno {$searchContext ?? 5} řádků před a za.
+					{elseif $direction === 'before'}
+						Zobrazeno {$searchContext ?? 5} řádků před.
+					{else}
+						Zobrazeno {$searchContext ?? 5} řádků za.
+					{/if}
+				</div>
+			{else}
+				<div class="alert alert-warning mb-0">
+					<i class="fas fa-exclamation-triangle me-1"></i>
+					Text "<strong>{$searchQuery}</strong>" nebyl v souboru nalezen.
+				</div>
+			{/if}
+		{/if}
+
+		{* File Meta Information *}
+		<div class="file-meta">
+			<div class="file-meta-item">
+				<i class="fas fa-database text-primary"></i>
+				<span>
+					<strong>Velikost:</strong>
+					{if $fileSize < 1024}
+						{$fileSize} B
+					{elseif $fileSize < 1024 * 1024}
+						{round($fileSize / 1024, 2)} KB
+					{else}
+						{round($fileSize / (1024 * 1024), 2)} MB
+					{/if}
+				</span>
+			</div>
+			<div class="file-meta-item">
+				<i class="fas fa-clock text-primary"></i>
+				<span>
+					<strong>Změněno:</strong>
+					{$lastModified|date:'d.m.Y H:i:s'}
+				</span>
+			</div>
+			<div class="file-meta-item">
+				<i class="fas fa-tag text-primary"></i>
+				<span>
+					<strong>Typ:</strong>
+					{if $isHtml}
+						HTML / Tracy Exception
+					{else}
+						Log soubor
+					{/if}
+				</span>
+			</div>
+			{if !$isHtml && $totalPages > 1}
+				<div class="file-meta-item">
+					<i class="fas fa-file-alt text-primary"></i>
+					<span>
+						<strong>Zobrazeno:</strong>
+						{if $displayedSize < 1024}
+							{$displayedSize} B
+						{else}
+							{round($displayedSize / 1024, 1)} KB
+						{/if}
+						z
+						{if $totalSize < 1024}
+							{$totalSize} B
+						{elseif $totalSize < 1024 * 1024}
+							{round($totalSize / 1024, 1)} KB
+						{else}
+							{round($totalSize / (1024 * 1024), 1)} MB
+						{/if}
+						(stránka {$currentPage} z {$totalPages})
+					</span>
+				</div>
+			{/if}
+		</div>
+
+		{* Pagination Navigation - Top *}
+		{if !$isHtml && $totalPages > 1}
+			<div class="row mb-3">
+				<div class="col">
+					<nav aria-label="Stránkování souboru">
+						<ul class="pagination justify-content-center mb-0">
+							{if $currentPage > 1}
+								<li class="page-item">
+									<a n:href="view, file => $filePath, page => 1" class="page-link">
+										<i class="fas fa-angle-double-left"></i> První
+									</a>
+								</li>
+								<li class="page-item">
+									<a n:href="view, file => $filePath, page => $currentPage - 1" class="page-link">
+										<i class="fas fa-angle-left"></i> Předchozí
+									</a>
+								</li>
+							{else}
+								<li class="page-item disabled">
+									<span class="page-link"><i class="fas fa-angle-double-left"></i> První</span>
+								</li>
+								<li class="page-item disabled">
+									<span class="page-link"><i class="fas fa-angle-left"></i> Předchozí</span>
+								</li>
+							{/if}
+
+							<li class="page-item active">
+								<span class="page-link">Stránka {$currentPage} z {$totalPages}</span>
+							</li>
+
+							{if $currentPage < $totalPages}
+								<li class="page-item">
+									<a n:href="view, file => $filePath, page => $currentPage + 1" class="page-link">
+										Další <i class="fas fa-angle-right"></i>
+									</a>
+								</li>
+								<li class="page-item">
+									<a n:href="view, file => $filePath, page => $totalPages" class="page-link">
+										Poslední <i class="fas fa-angle-double-right"></i>
+									</a>
+								</li>
+							{else}
+								<li class="page-item disabled">
+									<span class="page-link">Další <i class="fas fa-angle-right"></i></span>
+								</li>
+								<li class="page-item disabled">
+									<span class="page-link">Poslední <i class="fas fa-angle-double-right"></i></span>
+								</li>
+							{/if}
+						</ul>
+					</nav>
+				</div>
+			</div>
+		{/if}
+
+		{* File Content *}
+		<div class="file-content">
+			{if $isHtml}
+				<div class="html-content">
+					<iframe srcdoc="{$content|noescape}"></iframe>
+				</div>
+			{else}
+				<pre class="log-content"><code>{foreach explode("\n", $content) as $line}<span class="line">{$line}</span>
+{/foreach}</code></pre>
+			{/if}
+		</div>
+
+		{* Pagination Navigation - Bottom *}
+		{if !$isHtml && $totalPages > 1}
+			<div class="row mt-3">
+				<div class="col">
+					<nav aria-label="Stránkování souboru">
+						<ul class="pagination justify-content-center mb-0">
+							{if $currentPage > 1}
+								<li class="page-item">
+									<a n:href="view, file => $filePath, page => 1" class="page-link">
+										<i class="fas fa-angle-double-left"></i> První
+									</a>
+								</li>
+								<li class="page-item">
+									<a n:href="view, file => $filePath, page => $currentPage - 1" class="page-link">
+										<i class="fas fa-angle-left"></i> Předchozí
+									</a>
+								</li>
+							{else}
+								<li class="page-item disabled">
+									<span class="page-link"><i class="fas fa-angle-double-left"></i> První</span>
+								</li>
+								<li class="page-item disabled">
+									<span class="page-link"><i class="fas fa-angle-left"></i> Předchozí</span>
+								</li>
+							{/if}
+
+							<li class="page-item active">
+								<span class="page-link">Stránka {$currentPage} z {$totalPages}</span>
+							</li>
+
+							{if $currentPage < $totalPages}
+								<li class="page-item">
+									<a n:href="view, file => $filePath, page => $currentPage + 1" class="page-link">
+										Další <i class="fas fa-angle-right"></i>
+									</a>
+								</li>
+								<li class="page-item">
+									<a n:href="view, file => $filePath, page => $totalPages" class="page-link">
+										Poslední <i class="fas fa-angle-double-right"></i>
+									</a>
+								</li>
+							{else}
+								<li class="page-item disabled">
+									<span class="page-link">Další <i class="fas fa-angle-right"></i></span>
+								</li>
+								<li class="page-item disabled">
+									<span class="page-link">Poslední <i class="fas fa-angle-double-right"></i></span>
+								</li>
+							{/if}
+						</ul>
+					</nav>
+				</div>
+			</div>
+		{/if}
+
+		{* Footer *}
+		<div class="row mt-4">
+			<div class="col">
+				<p class="text-center text-muted small mb-0">
+					<i class="fas fa-shield-alt me-1"></i>
+					This page is accessible only from debug IP addresses
+				</p>
+			</div>
+		</div>
+	</div>
+
+	{* JSON Viewer Modal *}
+	<div class="modal fade" id="jsonModal" tabindex="-1" aria-labelledby="jsonModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content bg-dark text-light">
+				<div class="modal-header">
+					<h5 class="modal-title" id="jsonModalLabel">
+						<i class="fas fa-code me-2"></i>
+						JSON Data
+					</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="d-flex justify-content-end mb-2">
+						<button type="button" class="btn btn-sm btn-outline-light" id="copyJsonBtn">
+							<i class="fas fa-copy me-1"></i>
+							Copy to Clipboard
+						</button>
+					</div>
+					<pre id="jsonContent" style="background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; max-height: 70vh; overflow: auto; margin: 0;"><code></code></pre>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+	{if !$isHtml}
+	<script n:syntax="off">
+		// Toggle line wrapping
+		function toggleWrap() {
+			const pre = document.querySelector('pre.log-content');
+			const button = document.getElementById('wrapToggle');
+
+			if (pre.classList.contains('nowrap')) {
+				pre.classList.remove('nowrap');
+				button.classList.add('active');
+				button.innerHTML = '<i class="fas fa-align-left me-1"></i> Zalamovat řádky';
+			} else {
+				pre.classList.add('nowrap');
+				button.classList.remove('active');
+				button.innerHTML = '<i class="fas fa-arrows-alt-h me-1"></i> Nezalamovat';
+			}
+		}
+
+		// Detect and add JSON viewer icons
+		function detectAndMarkJson() {
+			const lines = document.querySelectorAll('.line');
+
+			lines.forEach((line, index) => {
+				const text = line.textContent;
+
+				// Try to find JSON object or array in the line
+				const jsonMatches = [];
+
+				// Find potential JSON objects
+				let depth = 0;
+				let startIdx = -1;
+				for (let i = 0; i < text.length; i++) {
+					if (text[i] === '{') {
+						if (depth === 0) startIdx = i;
+						depth++;
+					} else if (text[i] === '}') {
+						depth--;
+						if (depth === 0 && startIdx !== -1) {
+							const jsonStr = text.substring(startIdx, i + 1);
+							try {
+								JSON.parse(jsonStr);
+								jsonMatches.push( { start: startIdx, end: i + 1, json: jsonStr } );
+							} catch (e) {
+								// Not valid JSON, ignore
+							}
+							startIdx = -1;
+						}
+					}
+				}
+
+				// Find potential JSON arrays
+				depth = 0;
+				startIdx = -1;
+				for (let i = 0; i < text.length; i++) {
+					if (text[i] === '[') {
+						if (depth === 0) startIdx = i;
+						depth++;
+					} else if (text[i] === ']') {
+						depth--;
+						if (depth === 0 && startIdx !== -1) {
+							const jsonStr = text.substring(startIdx, i + 1);
+							try {
+								JSON.parse(jsonStr);
+								jsonMatches.push( { start: startIdx, end: i + 1, json: jsonStr } );
+							} catch (e) {
+								// Not valid JSON, ignore
+							}
+							startIdx = -1;
+						}
+					}
+				}
+
+				// If we found JSON, add icon
+				if (jsonMatches.length > 0) {
+					// Use the largest JSON match (usually the main object)
+					const largestMatch = jsonMatches.reduce((a, b) =>
+						(b.end - b.start) > (a.end - a.start) ? b : a
+					);
+
+					const icon = document.createElement('span');
+					icon.className = 'json-viewer-icon';
+					icon.innerHTML = '<i class="fas fa-code"></i>';
+					icon.title = 'Click to view formatted JSON';
+					icon.dataset.json = largestMatch.json;
+					icon.onclick = function() {
+						showJsonModal(this.dataset.json);
+					};
+
+					line.appendChild(icon);
+				}
+			});
+		}
+
+		// Show JSON in modal with formatting
+		function showJsonModal(jsonString) {
+			try {
+				const jsonObj = JSON.parse(jsonString);
+				const formatted = JSON.stringify(jsonObj, null, 2);
+
+				// Apply syntax highlighting to JSON
+				const highlighted = syntaxHighlightJson(formatted);
+
+				const modalContent = document.querySelector('#jsonContent code');
+				modalContent.innerHTML = highlighted;
+
+				// Store raw JSON for copying
+				modalContent.dataset.rawJson = formatted;
+
+				// Show modal
+				const modal = new bootstrap.Modal(document.getElementById('jsonModal'));
+				modal.show();
+			} catch (e) {
+				alert('Error parsing JSON: ' + e.message);
+			}
+		}
+
+		// Syntax highlight JSON
+		function syntaxHighlightJson(json) {
+			json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+				let cls = 'json-number';
+				if (/^"/.test(match)) {
+					if (/:$/.test(match)) {
+						cls = 'json-key';
+					} else {
+						cls = 'json-string';
+					}
+				} else if (/true|false/.test(match)) {
+					cls = 'json-boolean';
+				} else if (/null/.test(match)) {
+					cls = 'json-null';
+				}
+				return '<span class="' + cls + '">' + match + '</span>';
+			});
+		}
+
+		// Copy JSON to clipboard
+		document.getElementById('copyJsonBtn').addEventListener('click', function() {
+			const modalContent = document.querySelector('#jsonContent code');
+			const jsonText = modalContent.dataset.rawJson;
+
+			navigator.clipboard.writeText(jsonText).then(function() {
+				const btn = document.getElementById('copyJsonBtn');
+				const originalHtml = btn.innerHTML;
+				btn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+				setTimeout(function() {
+					btn.innerHTML = originalHtml;
+				}, 2000);
+			}).catch(function(err) {
+				alert('Failed to copy: ' + err);
+			});
+		});
+
+		// Apply syntax highlighting
+		function highlightLogContent() {
+			const code = document.querySelector('pre.log-content code');
+			if (!code) return;
+
+			let html = code.innerHTML;
+
+			// Highlight timestamps [YYYY-MM-DD HH-MM-SS]
+			html = html.replace(/(\[[\d\-: ]+\])/g, '<span class="highlight-timestamp">$1</span>');
+
+			// Highlight URLs
+			html = html.replace(/(https?:\/\/[^\s<]+)/g, '<span class="highlight-url">$1</span>');
+
+			// Highlight file paths (in /var/www/html or similar)
+			html = html.replace(/(\/[\w\-\.\/]+\.(?:php|html|log|xml|json))/g, '<span class="highlight-path">$1</span>');
+
+			// Highlight exceptions (class names ending with Exception)
+			html = html.replace(/\b([\w\\]+Exception):/g, '<span class="highlight-exception">$1</span>:');
+
+			// Highlight ERROR
+			html = html.replace(/\b(ERROR|Error|error)\b/g, '<span class="highlight-error">$1</span>');
+
+			// Highlight WARNING
+			html = html.replace(/\b(WARNING|Warning|warning)\b/g, '<span class="highlight-warning">$1</span>');
+
+			// Highlight INFO
+			html = html.replace(/\b(INFO|Info|info)\b/g, '<span class="highlight-info">$1</span>');
+
+			// Highlight DEBUG
+			html = html.replace(/\b(DEBUG|Debug|debug)\b/g, '<span class="highlight-debug">$1</span>');
+
+			// Highlight SUCCESS
+			html = html.replace(/\b(SUCCESS|Success|success)\b/g, '<span class="highlight-success">$1</span>');
+
+			// Highlight JSON keys (simple pattern)
+			html = html.replace(/"([\w\-]+)":/g, '"<span class="highlight-json-key">$1</span>":');
+
+			// Highlight numbers
+			html = html.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="highlight-number">$1</span>');
+
+			code.innerHTML = html;
+		}
+
+		// Apply highlighting and detect JSON
+		highlightLogContent();
+		detectAndMarkJson();
+
+		// Highlight search matches
+		{if $searchQuery !== null && $searchFound === true}
+			highlightSearchMatches('{$searchQuery|escapeJs}');
+		{/if}
+
+		// Function to highlight search matches in content
+		function highlightSearchMatches(searchQuery) {
+			const lines = document.querySelectorAll('.line');
+			const searchLower = searchQuery.toLowerCase();
+
+			lines.forEach(line => {
+				const text = line.textContent;
+				const textLower = text.toLowerCase();
+				const index = textLower.indexOf(searchLower);
+
+				if (index !== -1) {
+					// Split the text and wrap the match
+					const before = text.substring(0, index);
+					const match = text.substring(index, index + searchQuery.length);
+					const after = text.substring(index + searchQuery.length);
+
+					// Create highlighted version
+					const highlighted = document.createElement('span');
+					highlighted.textContent = before;
+
+					const highlightSpan = document.createElement('mark');
+					highlightSpan.className = 'highlight-match';
+					highlightSpan.textContent = match;
+
+					const afterSpan = document.createElement('span');
+					afterSpan.textContent = after;
+
+					// Clear line and add new content
+					line.innerHTML = '';
+					line.appendChild(highlighted);
+					line.appendChild(highlightSpan);
+					line.appendChild(afterSpan);
+				}
+			});
+		}
+	</script>
+	{/if}
+</body>
+</html>
