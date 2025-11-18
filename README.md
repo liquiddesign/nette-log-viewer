@@ -154,7 +154,7 @@ MIT License. See [LICENSE](LICENSE) file for details.
 
 ## Credits
 
-Developed by [Liquid Design](https://www.lweb.cz).
+Developed by [Liquid Design](https://www.lqd.cz).
 
 ## Support
 
