@@ -3,8 +3,8 @@
 Nette log viewer - Developer tool for viewing and downloading Tracy log files.
 
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen.svg)](https://phpstan.org/)
-[![Latest Stable Version](https://poser.pugx.org/liquiddesign/log-viewer/v/stable)](https://packagist.org/packages/liquiddesign/log-viewer)
-[![License](https://poser.pugx.org/liquiddesign/log-viewer/license)](https://packagist.org/packages/liquiddesign/log-viewer)
+[![Latest Stable Version](https://poser.pugx.org/liquiddesign/nette-log-viewer/v/stable)](https://packagist.org/packages/liquiddesign/nette-log-viewer)
+[![License](https://poser.pugx.org/liquiddesign/nette-log-viewer/license)](https://packagist.org/packages/liquiddesign/nette-log-viewer)
 
 ## Features
 
@@ -27,7 +27,7 @@ View log files with syntax highlighting, pagination, and in-file search.
 ## Installation
 
 ```bash
-composer require liquiddesign/log-viewer
+composer require liquiddesign/nette-log-viewer
 ```
 
 ## Usage
@@ -158,4 +158,4 @@ Developed by [Liquid Design](https://www.lqd.cz).
 
 ## Support
 
-For issues and feature requests, please use [GitHub Issues](https://github.com/liquiddesign/log-viewer/issues).
+For issues and feature requests, please use [GitHub Issues](https://github.com/liquiddesign/nette-log-viewer/issues).
