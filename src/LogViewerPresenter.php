@@ -61,13 +61,13 @@ class LogViewerPresenter extends Presenter
 			$allItems = \array_values($allItems);
 		}
 
-		// Sort: directories first, then files, alphabetically
+		// Sort: directories first, then by modification date (newest first)
 		\usort($allItems, function (array $a, array $b): int {
 			if ($a['is_dir'] !== $b['is_dir']) {
 				return $b['is_dir'] <=> $a['is_dir'];
 			}
 
-			return $a['name'] <=> $b['name'];
+			return ($b['modified'] ?? 0) <=> ($a['modified'] ?? 0);
 		});
 
 		// Pagination
