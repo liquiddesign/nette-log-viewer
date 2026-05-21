@@ -3,4 +3,5 @@ composer.lock
 .phpunit.result.cache
 .idea/
 .vscode/
+.peon*
 *.log

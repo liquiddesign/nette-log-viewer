@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-05-21
+
+### Added
+- JSON REST API (`LogViewerApiPresenter`) with endpoints: `list`, `stat`, `view`, `search`, `download`
+- Claude Code skill in `skill/log-viewer-api/` documenting the API for AI assistants
+- HTTP method restriction on API (returns `405` for non-GET/HEAD)
+- HTML view size cap (5 MB) with `truncated` flag to prevent OOM on large Tracy dumps
+
+### Changed
+- Extracted shared file/directory logic into new `LogReader` class; `LogViewerPresenter` now delegates to it
+- `$logDir` is now `protected` (was private), allowing extension via subclass override as documented
+
+### Fixed
+- Sibling-directory bypass in `validateFilePath` (`/var/log` could match `/var/log-other`); strict `DIRECTORY_SEPARATOR` containment check
+- Missing realpath containment check in directory listing (symlinks inside log dir could escape)
+- File handle leak in `search` and `readChunk` when iteration threw an exception (now use `try/finally`)
+- `fopen` failure in `readChunk`/`search` silently returned empty content; now throws `InvalidPathException`
+
 ## [1.0.2] - 2025-12-01
 
 ### Changed
@@ -35,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debug mode access restriction
 - Directory boundary validation
 
+[1.1.0]: https://github.com/liquiddesign/nette-log-viewer/releases/tag/v1.1.0
 [1.0.2]: https://github.com/liquiddesign/nette-log-viewer/releases/tag/v1.0.2
 [1.0.1]: https://github.com/liquiddesign/nette-log-viewer/releases/tag/v1.0.1
 [1.0.0]: https://github.com/liquiddesign/nette-log-viewer/releases/tag/v1.0.0
