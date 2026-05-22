@@ -31,6 +31,55 @@ View log files with syntax highlighting, pagination, and in-file search.
 composer require liquiddesign/nette-log-viewer
 ```
 
+## Migrating from 1.1 to 1.2
+
+Version 1.2 adds `LogViewer\DI\LogViewerExtension`, which makes route registration a one-liner. **Existing 1.1 setups keep working unchanged** — the extension is opt-in. To migrate:
+
+1. **Bump the dependency** in your host application:
+
+   ```bash
+   composer update liquiddesign/nette-log-viewer
+   ```
+
+2. **Register the extension** in `config/common.neon` (or equivalent):
+
+   ```neon
+   extensions:
+       logViewer: LogViewer\DI\LogViewerExtension
+   ```
+
+   If you use subclassed presenters (e.g. `App\Web\LogViewerPresenter` extending `LogViewer\LogViewerPresenter` for custom IP auth), point the extension at them:
+
+   ```neon
+   logViewer:
+       presenter: Web:LogViewer
+       apiPresenter: Web:LogViewerApi
+       registerPresenterMapping: false   # your app already maps Web:* → App\Web\*Presenter
+   ```
+
+3. **Remove the manual `log-viewer/*` routes** from `pages.neon` / `routing:` config:
+
+   ```diff
+    routing:
+        routes:
+   -        'log-viewer/api/<action>': Web:LogViewerApi:default
+   -        'log-viewer/view/<file .+>': Web:LogViewer:view
+   -        'log-viewer/download/<file .+>': Web:LogViewer:download
+   -        'log-viewer[/<path .+>]': Web:LogViewer:default
+   ```
+
+   The extension prepends these routes onto the main router automatically (specific routes before the wildcard, so `/log-viewer/api/list` always reaches the API presenter).
+
+4. **Clear the Nette DI cache** so the new container picks up the extension:
+
+   ```bash
+   composer clear-nette-cache  # or rm -rf temp/cache/Nette.Configurator
+   ```
+
+5. **Verify** that `GET /log-viewer` (UI) and `GET /log-viewer/api/list` (JSON) both respond as before.
+
+If you would rather not use the extension, set `registerRoutes: false` and `registerPresenterMapping: false` (or simply don't register the extension at all) — manual routing from 1.1 keeps working as documented under [Option B](#option-b-manual-neon-routes).
+
 ## Usage
 
 ### 1. Register Presenter in Router
