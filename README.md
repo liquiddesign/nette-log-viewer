@@ -35,31 +35,70 @@ composer require liquiddesign/nette-log-viewer
 
 ### 1. Register Presenter in Router
 
-#### Option A: Using NEON Configuration (Recommended)
+#### Option A: Using DI Extension (Recommended)
 
-Add routes to your `config/pages.neon` or similar configuration file:
+Register the bundled `LogViewerExtension` in your `config/common.neon`:
+
+```neon
+extensions:
+	logViewer: LogViewer\DI\LogViewerExtension
+```
+
+This registers the four routes (UI + JSON API) at the **front** of the router (so the `log-viewer/api/<action>` specific route always matches before the `log-viewer[/<path .+>]` wildcard) and adds the presenter mapping `LogViewer:* → LogViewer\*Presenter`. No additional `pages.neon` / `routing:` entries needed.
+
+If you subclass the presenters in your own namespace (see [Access Control](#access-control) below), point the extension at them:
+
+```neon
+logViewer:
+	presenter: Web:LogViewer
+	apiPresenter: Web:LogViewerApi
+	registerPresenterMapping: false   # your app already maps Web:* → App\Web\*Presenter
+```
+
+All options (with defaults):
+
+```neon
+logViewer:
+	urlPrefix: log-viewer                # URL prefix (no leading slash)
+	presenter: LogViewer:LogViewer       # UI presenter
+	apiPresenter: LogViewer:LogViewerApi # JSON API presenter
+	registerRoutes: true                 # set false to manage routes manually
+	registerPresenterMapping: true       # set false if the host uses its own mapping
+```
+
+#### Option B: Manual NEON Routes
+
+If you prefer to manage routing yourself, add the routes to `config/pages.neon` (or your routing config):
 
 ```neon
 routing:
 	routes:
-		'log-viewer/api/<action>': LogViewer:LogViewerApi:<action>
+		'log-viewer/api/<action>': LogViewer:LogViewerApi:default
 		'log-viewer/view/<file .+>': LogViewer:LogViewer:view
 		'log-viewer/download/<file .+>': LogViewer:LogViewer:download
 		'log-viewer[/<path .+>]': LogViewer:LogViewer:default
 ```
 
-If you extended the presenter in your app namespace (e.g., `App\Web\LogViewerPresenter`):
+With an extended presenter in your app namespace (e.g., `App\Web\LogViewerPresenter` / `App\Web\LogViewerApiPresenter`):
 
 ```neon
 routing:
 	routes:
-		'log-viewer/api/<action>': Web:LogViewerApi:<action>
+		'log-viewer/api/<action>': Web:LogViewerApi:default
 		'log-viewer/view/<file .+>': Web:LogViewer:view
 		'log-viewer/download/<file .+>': Web:LogViewer:download
 		'log-viewer[/<path .+>]': Web:LogViewer:default
 ```
 
-#### Option B: Using PHP Router
+When using the `LogViewer:*` presenter names with manual routes, you also need a presenter mapping in `common.neon`:
+
+```neon
+application:
+	mapping:
+		LogViewer: LogViewer\*Presenter
+```
+
+#### Option C: Using PHP Router
 
 Alternatively, add the route in your RouterFactory:
 

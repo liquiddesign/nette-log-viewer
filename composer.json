@@ -20,6 +20,8 @@
 	"require": {
 		"php": "^8.0",
 		"nette/application": "^3.1",
+		"nette/di": "^3.1",
+		"nette/schema": "^1.2",
 		"nette/utils": "^4.0",
 		"tracy/tracy": "^2.10"
 	},

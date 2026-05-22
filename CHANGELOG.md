@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-05-22
+
+### Added
+- `LogViewer\DI\LogViewerExtension` for one-line setup — registers UI + JSON API routes and presenter mapping via Nette DI. Eliminates the need to write 4 routes into `pages.neon` (and the wildcard-order trap that caused). Configurable `urlPrefix`, `presenter`, `apiPresenter`, and toggles `registerRoutes` / `registerPresenterMapping`.
+
+### Changed
+- `composer.json`: added explicit dependencies on `nette/di ^3.1` and `nette/schema ^1.2` (previously satisfied transitively via `nette/application`)
+
 ## [1.1.0] - 2026-05-21
 
 ### Added
