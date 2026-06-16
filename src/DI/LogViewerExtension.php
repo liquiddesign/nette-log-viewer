@@ -56,6 +56,10 @@ final class LogViewerExtension extends CompilerExtension
 	/**
 	 * Build the LogViewer routes. Prepend them in the host RouterFactory before
 	 * the catch-all route so they are matched first.
+	 *
+	 * The file name is passed via the "file" query parameter (not in the URL
+	 * path) so requests are not blocked by web-server rules that deny paths
+	 * ending in sensitive extensions such as .log or .sql.
 	 * @return array<int, \Nette\Application\Routers\Route>
 	 */
 	public static function createRoutes(string $urlPrefix = 'log-viewer', string $uiPresenter = 'LogViewer:LogViewer', string $apiPresenter = 'LogViewer:LogViewerApi'): array
@@ -64,8 +68,8 @@ final class LogViewerExtension extends CompilerExtension
 
 		return [
 			new Route("{$prefix}/api/<action>", "{$apiPresenter}:default"),
-			new Route("{$prefix}/view/<file .+>", "{$uiPresenter}:view"),
-			new Route("{$prefix}/download/<file .+>", "{$uiPresenter}:download"),
+			new Route("{$prefix}/view", "{$uiPresenter}:view"),
+			new Route("{$prefix}/download", "{$uiPresenter}:download"),
 			new Route("{$prefix}[/<path .+>]", "{$uiPresenter}:default"),
 		];
 	}
