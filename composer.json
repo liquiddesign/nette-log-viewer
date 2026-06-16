@@ -19,11 +19,10 @@
 	],
 	"require": {
 		"php": "^8.0",
-		"nette/application": "^3.1",
-		"nette/di": "^3.1",
-		"nette/schema": "^1.2",
-		"nette/utils": "^4.0",
-		"tracy/tracy": "^2.10"
+		"nette/application": "^2.4",
+		"nette/di": "^2.4",
+		"nette/utils": "^2.5",
+		"tracy/tracy": "^2.6"
 	},
 	"require-dev": {
 		"liquiddesign/codestyle": "^4.0",

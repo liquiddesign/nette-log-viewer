@@ -148,7 +148,7 @@ final class LogReader
 			if ($page > 1 && $content !== '') {
 				$firstNewline = Strings::indexOf($content, "\n");
 
-				if ($firstNewline !== null) {
+				if (\is_int($firstNewline)) {
 					$content = Strings::substring($content, $firstNewline + 1);
 				}
 			}
