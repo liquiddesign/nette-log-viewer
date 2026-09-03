@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-09-03
+
+### Fixed
+- `view` / `search` on a gzipped log (rotated `*.log-YYYYMMDD.gz`) returned the raw compressed bytes, which made the API's `Json::encode` throw `Malformed UTF-8 characters, possibly incorrectly encoded` (HTTP 500). Gzipped files are now decompressed transparently (`compress.zlib://`); `size` / `totalPages` describe the decompressed content, the on-disk size is exposed as `compressedSize` and the flag `isGzip` is added to `stat` and `view` responses.
+- All text returned by `LogReader` (`readChunk`, `search`, `readAll`) is passed through `Nette\Utils\Strings::fixEncoding()`, so invalid UTF-8 sequences in a log can no longer break the JSON API or blank the UI viewer.
+
+### Added
+- File type `gzip` for `*.gz` entries in directory listings; UI file view shows the on-disk size next to the decompressed size for gzipped files.
+
 ## [1.2.0] - 2026-05-22
 
 ### Added

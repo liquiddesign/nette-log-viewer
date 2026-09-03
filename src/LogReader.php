@@ -16,6 +16,9 @@ final class LogReader
 
 	public const DEFAULT_ITEMS_PER_PAGE = 100;
 
+	/** PHP stream wrapper used to read gzipped logs transparently */
+	private const GZIP_STREAM_PREFIX = 'compress.zlib://';
+
 	public function __construct(private string $logDir)
 	{
 	}
@@ -92,12 +95,7 @@ final class LogReader
 			$chunkSize = self::DEFAULT_CHUNK_SIZE;
 		}
 
-		$fileSize = \filesize($fullPath);
-
-		if ($fileSize === false) {
-			$fileSize = 0;
-		}
-
+		$fileSize = $this->contentSize($fullPath);
 		$totalPages = $fileSize > 0 ? (int) \ceil($fileSize / $chunkSize) : 0;
 
 		if ($page < 1) {
@@ -108,11 +106,7 @@ final class LogReader
 			$page = $totalPages;
 		}
 
-		$handle = \fopen($fullPath, 'r');
-
-		if ($handle === false) {
-			throw new InvalidPathException('Could not open file');
-		}
+		$handle = $this->openForReading($fullPath);
 
 		try {
 			$offset = ($page - 1) * $chunkSize;
@@ -156,6 +150,8 @@ final class LogReader
 			\fclose($handle);
 		}
 
+		$content = $this->sanitizeText($content);
+
 		return [
 			'content' => $content,
 			'displayedSize' => Strings::length($content),
@@ -167,13 +163,22 @@ final class LogReader
 	}
 
 	/**
-	 * Read whole file (use only for known-small files like Tracy HTML dumps)
+	 * Read whole file (use only for known-small files like Tracy HTML dumps).
+	 * Gzipped files (*.gz) are decompressed transparently.
 	 */
 	public function readAll(string $relativeFile): string
 	{
 		$fullPath = $this->resolveFile($relativeFile);
 
-		return FileSystem::read($fullPath);
+		$content = $this->isGzip($fullPath)
+			? \file_get_contents(self::GZIP_STREAM_PREFIX . $fullPath)
+			: FileSystem::read($fullPath);
+
+		if ($content === false) {
+			throw new InvalidPathException('Could not open file');
+		}
+
+		return $this->sanitizeText($content);
 	}
 
 	/**
@@ -183,12 +188,7 @@ final class LogReader
 	public function search(string $relativeFile, string $query, int $contextLines = 5, string $direction = 'both'): ?array
 	{
 		$fullPath = $this->resolveFile($relativeFile);
-
-		$handle = \fopen($fullPath, 'r');
-
-		if ($handle === false) {
-			throw new InvalidPathException('Could not open file');
-		}
+		$handle = $this->openForReading($fullPath);
 
 		$buffer = [];
 		$lineNumber = 0;
@@ -241,27 +241,31 @@ final class LogReader
 		}
 
 		return [
-			'content' => \implode('', $buffer),
+			'content' => $this->sanitizeText(\implode('', $buffer)),
 			'lineNumber' => $foundAtLine,
 		];
 	}
 
 	/**
-	 * @return array{size: int, modified: int|null, extension: string, type: string, isHtml: bool, totalPages: int, chunkSize: int}
+	 * File metadata. For gzipped files (*.gz) `size` and `totalPages` describe the DECOMPRESSED
+	 * content (what view/search work with); `compressedSize` is the size on disk.
+	 * @return array{size: int, compressedSize: int, isGzip: bool, modified: int|null, extension: string, type: string, isHtml: bool, totalPages: int, chunkSize: int}
 	 */
 	public function stat(string $relativeFile, int $chunkSize = self::DEFAULT_CHUNK_SIZE): array
 	{
 		$fullPath = $this->resolveFile($relativeFile);
 
-		$size = \filesize($fullPath);
+		$diskSize = \filesize($fullPath);
 		$modified = \filemtime($fullPath);
 		$extension = \pathinfo($fullPath, \PATHINFO_EXTENSION);
-		$resolvedSize = $size !== false ? $size : 0;
+		$resolvedSize = $this->contentSize($fullPath);
 		$isHtml = $extension === 'html';
 		$totalPages = $isHtml ? 1 : ($resolvedSize > 0 ? (int) \ceil($resolvedSize / $chunkSize) : 0);
 
 		return [
 			'size' => $resolvedSize,
+			'compressedSize' => $diskSize !== false ? $diskSize : 0,
+			'isGzip' => $this->isGzip($fullPath),
 			'modified' => $modified !== false ? $modified : null,
 			'extension' => $extension,
 			'type' => $this->getFileType($extension),
@@ -269,6 +273,14 @@ final class LogReader
 			'totalPages' => $totalPages,
 			'chunkSize' => $chunkSize,
 		];
+	}
+
+	/**
+	 * Whether the file is a gzip archive (rotated logs such as `exception.log-20260902.gz`).
+	 */
+	public function isGzip(string $path): bool
+	{
+		return Strings::lower(\pathinfo($path, \PATHINFO_EXTENSION)) === 'gz';
 	}
 
 	public function fullPath(string $relativeFile): string
@@ -322,8 +334,71 @@ final class LogReader
 			'html' => 'html',
 			'json' => 'json',
 			'txt' => 'text',
+			'gz' => 'gzip',
 			default => 'file',
 		};
+	}
+
+	/**
+	 * Open file for reading; gzipped files are decompressed on the fly.
+	 * @return resource
+	 */
+	private function openForReading(string $fullPath)
+	{
+		$handle = \fopen($this->isGzip($fullPath) ? self::GZIP_STREAM_PREFIX . $fullPath : $fullPath, 'rb');
+
+		if ($handle === false) {
+			throw new InvalidPathException('Could not open file');
+		}
+
+		return $handle;
+	}
+
+	/**
+	 * Size of the content the reader works with: decompressed size for gzip
+	 * (ISIZE field in the gzip trailer, RFC 1952 — exact for content < 4 GiB), file size otherwise.
+	 */
+	private function contentSize(string $fullPath): int
+	{
+		$size = \filesize($fullPath);
+
+		if ($size === false) {
+			return 0;
+		}
+
+		if (!$this->isGzip($fullPath) || $size < 18) {
+			return $size;
+		}
+
+		$handle = \fopen($fullPath, 'rb');
+
+		if ($handle === false) {
+			return 0;
+		}
+
+		try {
+			\fseek($handle, -4, \SEEK_END);
+			$trailer = \fread($handle, 4);
+		} finally {
+			\fclose($handle);
+		}
+
+		if ($trailer === false) {
+			return 0;
+		}
+
+		$unpacked = \unpack('Vsize', $trailer);
+
+		return $unpacked !== false ? (int) $unpacked['size'] : 0;
+	}
+
+	/**
+	 * Make text safe for JSON / HTML output: strips invalid UTF-8 sequences (binary garbage,
+	 * mis-encoded bytes) that would otherwise make Json::encode throw "Malformed UTF-8 characters".
+	 */
+	private function sanitizeText(string $text): string
+	{
+		return Strings::fixEncoding($text);
 	}
 
 	/**

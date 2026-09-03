@@ -2,6 +2,8 @@
 {varType string $filePath}
 {varType string $content}
 {varType bool $isHtml}
+{varType bool $isGzip}
+{varType int $compressedSize}
 {varType int $fileSize}
 {varType int $lastModified}
 {varType int $totalSize}
@@ -328,6 +330,9 @@
 						{round($fileSize / 1024, 2)} KB
 					{else}
 						{round($fileSize / (1024 * 1024), 2)} MB
+					{/if}
+					{if $isGzip}
+						<span class="text-muted" title="Soubor je gzip archiv; zobrazuje se rozbalený obsah">(gzip, {round($compressedSize / 1024, 2)} KB na disku)</span>
 					{/if}
 				</span>
 			</div>

@@ -14,6 +14,7 @@ Nette log viewer - Developer tool for viewing and downloading Tracy log files.
 - 📄 **Pagination** - Browse large directories (100 items per page) and files (100KB chunks)
 - 💾 **Download support** - Download log files directly
 - 🎨 **HTML dumps** - View Tracy exception dumps in iframe
+- 🗜️ **Rotated logs** - `*.gz` files are viewed and searched decompressed on the fly
 - 🔌 **JSON REST API** - Programmatic access for external tools (Claude, scripts, monitoring)
 - 🔐 **Secure** - Only accessible when Tracy debugger is enabled (debug mode)
 

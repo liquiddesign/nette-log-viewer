@@ -128,14 +128,10 @@ class LogViewerPresenter extends Presenter
 			throw new BadRequestException($e->getMessage());
 		}
 
-		$fileInfo = \pathinfo($fullPath);
-		$isHtml = isset($fileInfo['extension']) && $fileInfo['extension'] === 'html';
-
-		$fileSize = \filesize($fullPath);
-
-		if ($fileSize === false) {
-			$fileSize = 0;
-		}
+		$stat = $this->reader()->stat($filePath);
+		$isHtml = $stat['isHtml'];
+		// For *.gz this is the decompressed size — the size view/search actually paginate over
+		$fileSize = $stat['size'];
 
 		if ($context < 1) {
 			$context = 1;
@@ -215,7 +211,9 @@ class LogViewerPresenter extends Presenter
 		$this->template->fileName = \basename($fullPath);
 		$this->template->filePath = $filePath;
 		$this->template->isHtml = $isHtml;
-		$this->template->fileSize = \filesize($fullPath);
+		$this->template->isGzip = $stat['isGzip'];
+		$this->template->fileSize = $fileSize;
+		$this->template->compressedSize = $stat['compressedSize'];
 		$this->template->lastModified = \filemtime($fullPath);
 	}
 

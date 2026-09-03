@@ -51,6 +51,7 @@ Success example (`/view`):
   "fileSize": 287654,
   "lastModified": 1716284400,
   "isHtml": false,
+  "isGzip": false,
   "displayedSize": 102398,
   "content": "[2026-05-21 10:00:01] ERROR: ..."
 }
@@ -72,6 +73,8 @@ Typical loop for "find this error":
 2. `GET /stat?file=<name>` — check size and `totalPages`.
 3. `GET /search?file=<name>&q=<error keyword>&context=20` — locate the first occurrence with context.
 4. If you need surrounding pages, `GET /view?file=<name>&page=<n>` and walk pages.
+
+Rotated logs (`*.gz`, e.g. `exception.log-20260902.gz`) are decompressed on the fly by `/stat`, `/view` and `/search` — `size` / `fileSize` / `totalPages` describe the decompressed content, `isGzip: true` flags the file and `compressedSize` is the size on disk. `/download` still returns the raw gzip bytes.
 
 Tracy HTML dumps (`*.html` files) return as `isHtml: true` and are loaded whole. Files larger than 5 MB come back with `truncated: true` and empty content — use `/download` to fetch them. Do not paginate HTML, do not search HTML (search returns `400`).
 
