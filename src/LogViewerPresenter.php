@@ -242,7 +242,7 @@ class LogViewerPresenter extends Presenter
 		$dir = $file !== false ? \dirname($file) : __DIR__;
 
 		return [
-			"$dir/templates/$presenter.$this->view.latte",
+			"$dir/templates/$presenter." . $this->getView() . '.latte',
 		];
 	}
 
