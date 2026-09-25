@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-09-25
+
+### Changed
+- `composer.json`: `nette/utils` widened from `^4.0` to `^3.2 || ^4.0`. The package only calls `Strings::length/substring/indexOf/lower/trim/fixEncoding` and `FileSystem::read`, all present in nette/utils 3.2, so hosts that are pinned to nette/utils 3.x (e.g. through StORM 1.x) can install it — and with it `liquiddesign/liquid-monitor-connector` 3.x, which bundles this package.
+
 ## [1.2.2] - 2026-09-03
 
 ### Fixed

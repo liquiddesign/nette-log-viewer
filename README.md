@@ -320,9 +320,9 @@ class LogViewerPresenter extends BaseLogViewerPresenter
 
 ## Requirements
 
-- PHP 8.3 or 8.4
-- Nette Application 3.2+
-- Nette Utils 4.0+
+- PHP 8.1+
+- Nette Application 3.1+
+- Nette Utils 3.2+ or 4.0+
 - Tracy 2.10+
 
 ## Development
