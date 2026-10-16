@@ -4,6 +4,9 @@
 
 	<rule ref="vendor/liquiddesign/codestyle/src/ruleset.xml"/>
 
+	<!-- composer.json "php": "^8.0" — without this Slevomat (phpcbf) turns `@return never` back into native `never` (PHP 8.1+). -->
+	<config name="php_version" value="80000"/>
+
 	<rule ref="SlevomatCodingStandard.Files.TypeNameMatchesFileName">
 		<properties>
 			<property name="rootNamespaces" type="array">

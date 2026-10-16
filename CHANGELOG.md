@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-10-16
+
+### Fixed
+- PHP 8.0 support, as `composer.json` (`"php": "^8.0"`) always declared: `LogViewerApiPresenter::sendJsonPayload()` / `sendErrorResponse()` used the native `never` return type (PHP 8.1+), so loading the class on PHP 8.0 was a fatal error. They return `void` with `@return never` now — behaviour is unchanged (both still end the request). Subclasses that override them with `never` keep working (`never` may narrow `void`).
+- `ruleset.xml` pins Slevomat to `php_version` 8.0, so `phpcbf` no longer suggests 8.1+ native types.
+
 ## [1.2.3] - 2026-09-25
 
 ### Changed

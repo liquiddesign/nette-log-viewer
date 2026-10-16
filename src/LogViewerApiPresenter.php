@@ -256,15 +256,20 @@ class LogViewerApiPresenter extends Presenter
 	}
 
 	/**
+	 * Native `never` is PHP 8.1+; the package supports PHP 8.0, so the type lives in the annotation.
 	 * @param array<string, mixed> $payload
+	 * @return never
 	 */
-	protected function sendJsonPayload(array $payload, int $code = 200): never
+	protected function sendJsonPayload(array $payload, int $code = 200): void
 	{
 		$this->getHttpResponse()->setCode($code);
 		$this->sendResponse(new JsonResponse($payload));
 	}
 
-	protected function sendErrorResponse(int $code, string $message): never
+	/**
+	 * @return never
+	 */
+	protected function sendErrorResponse(int $code, string $message): void
 	{
 		$this->sendJsonPayload(['error' => $message, 'code' => $code], $code);
 	}
